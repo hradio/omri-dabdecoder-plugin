@@ -1,0 +1,51 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 28
+    buildToolsVersion '27.0.3'
+    defaultConfig {
+        applicationId "de.irt.dabmpg123decoderplugin"
+        minSdkVersion 16
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            debuggable false
+        }
+    }
+
+    sourceSets {
+        main {
+            jniLibs.srcDirs = ['libs']
+        }
+    }
+
+    task ndkBuild(type: Exec) {
+        def ndkDir = project.android.ndkDirectory.absolutePath
+        String osName = org.gradle.internal.os.OperatingSystem.current().getName()
+        if (org.gradle.internal.os.OperatingSystem.current().isLinux()) {
+            commandLine "$ndkDir/ndk-build", '-C', file("$projectDir").absolutePath
+        } else if (org.gradle.internal.os.OperatingSystem.current().isUnix()) {
+            //TODO consider UNIX build
+        } else if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            commandLine "$ndkDir/ndk-build.cmd", '-C', file("$projectDir").absolutePath
+        } else if (org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+            //TODO consider OSX build
+        } else {
+            //unknown OS...Ooops...
+        }
+    }
+
+    tasks.withType(JavaCompile) {
+        compileTask -> compileTask.dependsOn ndkBuild
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation project(path: ':dabaudiodecoderplugininterface')
+}
