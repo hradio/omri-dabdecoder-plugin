@@ -23,8 +23,12 @@ public class Mpg123Decoder extends Service {
     }
 
     private void decodedDataCallback(byte[] pcmData) {
+        //Log.d(TAG, "Decoded PCM Data: " + pcmData.length);
+
         try {
-            mCallback.decodedPcmData(pcmData);
+            if(mCallback != null) {
+                mCallback.decodedPcmData(pcmData);
+            }
         } catch(RemoteException remExc) {
             if(BuildConfig.DEBUG)Log.e(TAG, "RemoteException!");
         }

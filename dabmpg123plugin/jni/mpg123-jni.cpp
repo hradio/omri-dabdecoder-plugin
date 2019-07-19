@@ -3,6 +3,7 @@
 
 #include <mpgdecoder.h>
 
+//Globals
 JavaVM * g_vm = NULL;
 jobject g_obj = NULL;
 jclass g_decoderClass = NULL;
@@ -21,6 +22,8 @@ MpgDecoder::MpgDecoder() {
 	if (m_mpg123Decoder != NULL) {
 		errCode = mpg123_param(m_mpg123Decoder, MPG123_VERBOSE, 2, 0);
 		__android_log_print(ANDROID_LOG_INFO, "MpgDecoder", "Setting verbose: %d", errCode);
+		//errCode = mpg123_param(m_mpg123Decoder, MPG123_ADD_FLAGS, MPG123_FORCE_STEREO, 0);
+		//__android_log_print(ANDROID_LOG_INFO, "MpgDecoder", "Setting force Stereo: %d", errCode);
 		
 		errCode = mpg123_open_feed(m_mpg123Decoder);
         if ( errCode == 0 ) {
@@ -33,6 +36,8 @@ MpgDecoder::MpgDecoder() {
 }
 
 MpgDecoder::~MpgDecoder() {
+	__android_log_print(ANDROID_LOG_INFO, "MpgDecoder", "Destructing!");
+
 	if(m_mpg123Decoder != NULL) {
         mpg123_close(m_mpg123Decoder);
         mpg123_delete(m_mpg123Decoder);
@@ -42,6 +47,7 @@ MpgDecoder::~MpgDecoder() {
 }
 
 size_t MpgDecoder::decode(u_int8_t* audioData, int length) {
+	//__android_log_print(ANDROID_LOG_INFO, "MpgDecoder", "Decoding: %d", length);
 
 	size_t done;
     if(m_mpg123Decoder != NULL) {
@@ -56,7 +62,7 @@ size_t MpgDecoder::decode(u_int8_t* audioData, int length) {
                     return 0;
                 }
 				
-                case MPG123_NEED_MORE : {					
+                case MPG123_NEED_MORE : {	
 					JNIEnv* env;
 					g_vm->GetEnv ((void **) &env, JNI_VERSION_1_6);
 					jbyteArray decData = env->NewByteArray(done);
@@ -67,6 +73,7 @@ size_t MpgDecoder::decode(u_int8_t* audioData, int length) {
                     return done;
                 }
                 case MPG123_OK : {
+					__android_log_print(ANDROID_LOG_INFO, "MpgDecoder", "MPG123_OK: 0x%x 0x%x 0x%x", m_mpgOut[0], m_mpgOut[1], m_mpgOut[2]);
 					JNIEnv* env;
 					g_vm->GetEnv ((void **) &env, JNI_VERSION_1_6);
 					jbyteArray decData = env->NewByteArray(done);
@@ -90,8 +97,10 @@ size_t MpgDecoder::decode(u_int8_t* audioData, int length) {
 					__android_log_print(ANDROID_LOG_INFO, "MpgDecoder", "NewFormat Encoding: %d", encoding);
 
 					return 0;
+                    break;
                 }
                 default: {
+					__android_log_print(ANDROID_LOG_INFO, "MpgDecoder", "Default Error: %s", mpg123_strerror(m_mpg123Decoder));
 					return -1;
                 }
             }
@@ -100,6 +109,7 @@ size_t MpgDecoder::decode(u_int8_t* audioData, int length) {
 	}
 
 	delete[] audioData;
+	return -1;
 }
 
 extern "C" {
